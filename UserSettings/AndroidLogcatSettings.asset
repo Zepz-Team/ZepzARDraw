@@ -1,0 +1,155 @@
+{
+    "m_SelectedDeviceId": "1a27cae7",
+    "m_SelectedPackage": {
+        "deviceId": "1a27cae7",
+        "name": "com.Zepz.ZepzRemoteAssistantAR",
+        "processId": 19814,
+        "exited": false
+    },
+    "m_SelectedPriority": 0,
+    "m_KnownPackagesForSerialization": [
+        {
+            "deviceId": "1a27cae7",
+            "name": "com.Zepz.ZepzRemoteAssistantAR",
+            "processId": 32066,
+            "exited": true
+        },
+        {
+            "deviceId": "1a27cae7",
+            "name": "com.Zepz.ZepzRemoteAssistantAR",
+            "processId": 2896,
+            "exited": true
+        },
+        {
+            "deviceId": "1a27cae7",
+            "name": "com.Zepz.ZepzRemoteAssistantAR",
+            "processId": 6903,
+            "exited": true
+        },
+        {
+            "deviceId": "1a27cae7",
+            "name": "com.Zepz.ZepzRemoteAssistantAR",
+            "processId": 14804,
+            "exited": true
+        },
+        {
+            "deviceId": "1a27cae7",
+            "name": "com.Zepz.ZepzRemoteAssistantAR",
+            "processId": 27207,
+            "exited": true
+        },
+        {
+            "deviceId": "1a27cae7",
+            "name": "com.Zepz.ZepzRemoteAssistantAR",
+            "processId": 28089,
+            "exited": false
+        },
+        {
+            "deviceId": "1a27cae7",
+            "name": "com.Zepz.ZepzRemoteAssistantAR",
+            "processId": 30647,
+            "exited": false
+        },
+        {
+            "deviceId": "1a27cae7",
+            "name": "com.Zepz.ZepzRemoteAssistantAR",
+            "processId": 31753,
+            "exited": false
+        },
+        {
+            "deviceId": "1a27cae7",
+            "name": "com.Zepz.ZepzRemoteAssistantAR",
+            "processId": 32184,
+            "exited": false
+        },
+        {
+            "deviceId": "1a27cae7",
+            "name": "com.Zepz.ZepzRemoteAssistantAR",
+            "processId": 29047,
+            "exited": false
+        },
+        {
+            "deviceId": "1a27cae7",
+            "name": "com.Zepz.ZepzRemoteAssistantAR",
+            "processId": 31832,
+            "exited": false
+        },
+        {
+            "deviceId": "1a27cae7",
+            "name": "com.Zepz.ZepzRemoteAssistantAR",
+            "processId": 32312,
+            "exited": false
+        },
+        {
+            "deviceId": "1a27cae7",
+            "name": "com.Zepz.ZepzRemoteAssistantAR",
+            "processId": 15798,
+            "exited": false
+        },
+        {
+            "deviceId": "1a27cae7",
+            "name": "com.Zepz.ZepzRemoteAssistantAR",
+            "processId": 17675,
+            "exited": false
+        },
+        {
+            "deviceId": "1a27cae7",
+            "name": "com.Zepz.ZepzRemoteAssistantAR",
+            "processId": 19814,
+            "exited": false
+        }
+    ],
+    "m_Tags": {
+        "m_Entries": [
+            {
+                "m_Name": "Filter by all listed tags",
+                "m_Selected": false
+            },
+            {
+                "m_Name": "No Filter",
+                "m_Selected": false
+            },
+            {
+                "m_Name": "",
+                "m_Selected": false
+            },
+            {
+                "m_Name": "Tag Control...",
+                "m_Selected": false
+            },
+            {
+                "m_Name": "",
+                "m_Selected": false
+            },
+            {
+                "m_Name": "Unity",
+                "m_Selected": true
+            },
+            {
+                "m_Name": "CRASH",
+                "m_Selected": false
+            }
+        ]
+    },
+    "m_MemoryViewerState": {
+        "MemoryWindowHeight": 300.0,
+        "MemoryWindowWidth": 170.0,
+        "MemoryTypeEnabled": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+        ],
+        "MemoryGroup": 2,
+        "Behavior": 0
+    },
+    "m_Filter": "",
+    "m_FilterIsRegularExpression": false,
+    "m_SymbolPaths": []
+}
