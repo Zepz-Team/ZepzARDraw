@@ -67,6 +67,6 @@ public class ARLine
 
         LineRenderer = goLineRenderer;
 
-        ARDebugManager.Instance.LogInfo($"New line renderer created");
+        //ARDebugManager.Instance.LogInfo($"New line renderer created");
     }
 }

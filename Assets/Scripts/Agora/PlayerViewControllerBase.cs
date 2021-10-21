@@ -5,6 +5,8 @@ using UnityEngine.SceneManagement;
 using io.agora.rtm;
 using agora_rtm;
 using System;
+using UnityEngine.XR.ARFoundation;
+using System.Collections.Generic;
 
 public class PlayerViewControllerBase : IVideoChatClient
 {
@@ -19,7 +21,13 @@ public class PlayerViewControllerBase : IVideoChatClient
     private string token = "";
 
     protected const string SelfVideoName = "myImage";
-    protected const string MainVideoName = "mainImage";
+    protected const string MainVideoName = "mainImage";    
+
+    protected NewUserHandler userHandler;
+
+    protected Dictionary<uint, GameObject> Users;
+
+    protected Transform canvas;
 
     string _userName = "";
     string UserName
@@ -50,6 +58,7 @@ public class PlayerViewControllerBase : IVideoChatClient
     public PlayerViewControllerBase(string appID)
     {
         this.AppID = appID;
+        Users = new Dictionary<uint, GameObject>();
     }
 
     /// <summary>
@@ -93,7 +102,7 @@ public class PlayerViewControllerBase : IVideoChatClient
         clientEventHandler.OnQueryPeersOnlineStatusResult = OnQueryPeersOnlineStatusResultHandler;
         clientEventHandler.OnLoginSuccess = OnClientLoginSuccessHandler;
         clientEventHandler.OnLoginFailure = OnClientLoginFailureHandler;
-        //clientEventHandler.OnMessageReceivedFromPeer = OnMessageReceivedFromPeerHandler;
+        clientEventHandler.OnMessageReceivedFromPeer = OnMessageReceivedFromPeerHandler;
     }
 
     void OnQueryPeersOnlineStatusResultHandler(int id, long requestId, PeerOnlineStatus[] peersStatus, int peerCount, QUERY_PEERS_ONLINE_STATUS_ERR errorCode)
@@ -121,6 +130,12 @@ public class PlayerViewControllerBase : IVideoChatClient
         string msg = "client login unsuccessful! id = " + id + " errorCode = " + errorCode;
         Debug.Log(msg);
         //messageDisplay.AddTextToDisplay(msg, Message.MessageType.Error);
+    }
+
+    protected virtual void OnMessageReceivedFromPeerHandler(int id, string peerId, TextMessage message)
+    {
+        string msg = "client OnMessageReceivedFromPeer id = " + id + ", from user:" + peerId;
+        Debug.Log(msg);        
     }
 
     /// <summary>
@@ -186,25 +201,41 @@ public class PlayerViewControllerBase : IVideoChatClient
 
     public virtual void OnSceneLoaded()
     {
-        // find a game object to render video stream from 'uid'
-        GameObject go = GameObject.Find(RemoteStreamTargetImage);
-        if (go == null)
+        canvas = GameObject.Find("ChatCanvasUI")?.transform;
+        if (ReferenceEquals(canvas, null))
         {
+            Debug.LogError("Canvas not found, so returning!");
             return;
         }
 
-        VideoSurface videoSurface = go.AddComponent<VideoSurface>();
-        videoSurface.enabled = false;
+        GameObject gridLayout = canvas.Find("GridLayout")?.gameObject;
+        if (gridLayout != null)
+        {
+            userHandler = gridLayout.GetComponent<NewUserHandler>();
 
-        go = GameObject.Find("ButtonExit");
+            userHandler.ConfigureLocalUser();
+        }        
+
+        // find a game object to render video stream from 'uid'
+        //GameObject go = GameObject.Find(RemoteStreamTargetImage);
+        //if (go == null)
+        //{
+        //    return;
+        //}
+
+        //VideoSurface videoSurface = go.AddComponent<VideoSurface>();
+        //videoSurface.enabled = false;
+
+        GameObject go = GameObject.Find("ButtonExit");
         if (go != null)
         {
             Button button = go.GetComponent<Button>();
             if (button != null)
             {
                 button.onClick.AddListener(OnLeaveButtonClicked);
-            }
+            }            
         }
+        
         SetupToggleMic();         
     }
 
@@ -212,18 +243,17 @@ public class PlayerViewControllerBase : IVideoChatClient
     protected virtual void OnJoinChannelSuccess(string channelName, uint uid, int elapsed)
     {
         Debug.Log("JoinChannelSuccessHandler: uid = " + uid);
-        mRtcEngine.OnFirstRemoteVideoDecoded += (a, b, c, d) =>
-        {
-            Debug.LogWarningFormat("OnFirstRemoteVideoDecoded: uid:{0} w:{1} h:{2} elapsed:{3}", a, b, c, d);
-        };
-
-        ///Login the rtmClient
-        LoginRtmClient(uid.ToString());
+        mRtcEngine.OnFirstRemoteVideoDecoded = LogFirstRemoteVideoDecoded;        
     }
 
-    private void LoginRtmClient(string userName)
+    void LogFirstRemoteVideoDecoded(uint uid, int width, int height, int elapsed)
     {
-        UserName = userName;// userNameInput.text;
+        Debug.LogWarningFormat("OnFirstRemoteVideoDecoded: uid:{0} w:{1} h:{2} elapsed:{3}", uid, width, height, elapsed);
+    }
+
+    protected void LoginRtmClient()
+    {
+        UserName = "LocalUser";// userNameInput.text;
 
         if (string.IsNullOrEmpty(UserName))
         {
@@ -231,10 +261,10 @@ public class PlayerViewControllerBase : IVideoChatClient
             return;
         }
 
-        rtmClient.Login(token, UserName);
+        rtmClient.Login(token, UserName);        
     }
 
-    void LogoutRtmClient()
+    protected void LogoutRtmClient()
     {
         //messageDisplay.AddTextToDisplay(UserName + " logged out of the rtm", Message.MessageType.Info);
         Debug.Log(UserName + " logged out of the rtm");
@@ -246,23 +276,11 @@ public class PlayerViewControllerBase : IVideoChatClient
     protected virtual void OnUserJoined(uint uid, int elapsed)
     {
         Debug.Log("onUserJoined: uid = " + uid + " elapsed = " + elapsed);
-        // this is called in main thread
-
-        // find a game object to render video stream from 'uid'
-        GameObject go = GameObject.Find(RemoteStreamTargetImage);
-        if (go == null)
+        
+        if (!Users.ContainsKey(uid))
         {
-            return;
-        }
-
-        VideoSurface videoSurface = go.GetComponent<VideoSurface>();
-        if (videoSurface != null)
-        {
-            videoSurface.enabled = true;
-            // configure videoSurface
-            videoSurface.SetForUser(uid);
-            videoSurface.SetEnable(true);
-            videoSurface.SetGameFps(30);
+            GameObject GO =  userHandler.CreateAndConfigureUserVideo(uid);
+            Users.Add(uid, GO);           
         }
     }
 
@@ -271,19 +289,25 @@ public class PlayerViewControllerBase : IVideoChatClient
     protected virtual void OnUserOffline(uint uid, USER_OFFLINE_REASON reason)
     {
         // remove video stream
-        Debug.Log("onUserOffline: uid = " + uid + " reason = " + reason);
+        //Debug.Log("onUserOffline: uid = " + uid + " reason = " + reason);
         // this is called in main thread
-        GameObject go = GameObject.Find(RemoteStreamTargetImage);
-        if (go != null)
-        {
-            RawImage rawImage = go.GetComponent<RawImage>();
-            if (rawImage == null)
-            {
-                return;
-            }
+        //GameObject go = GameObject.Find(RemoteStreamTargetImage);
+        //if (go != null)
+        //{
+        //    RawImage rawImage = go.GetComponent<RawImage>();
+        //    if (rawImage == null)
+        //    {
+        //        return;
+        //    }
 
-            VideoSurface videoSurface = go.GetComponent<VideoSurface>();
-            videoSurface.enabled = false;
+        //    VideoSurface videoSurface = go.GetComponent<VideoSurface>();
+        //    videoSurface.enabled = false;
+        //}
+        GameObject GO = null;
+        if (Users.TryGetValue(uid, out GO))
+        {
+            userHandler.RemoveUserFromGrid(GO);
+            Users.Remove(uid);
         }
     }
 
@@ -296,6 +320,8 @@ public class PlayerViewControllerBase : IVideoChatClient
         LogoutRtmClient();
         DisposeRtm();
 
+        userHandler.DisposeLocalUser();
+
         SceneManager.LoadScene(GameController.HomeSceneName, LoadSceneMode.Single);
         GameObject gameObject = GameObject.Find("GameController");
         UnityEngine.Object.Destroy(gameObject);
@@ -306,7 +332,7 @@ public class PlayerViewControllerBase : IVideoChatClient
     private void SetupToggleMic()
     {
 
-        GameObject go = GameObject.Find("ToggleButton");
+        GameObject go = GameObject.Find("ToggleMicButton");
         if (go != null)
         {
             ToggleButton toggle = go.GetComponent<ToggleButton>();

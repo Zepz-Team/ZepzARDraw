@@ -12,7 +12,7 @@ public class ToggleButton : MonoBehaviour
         Toggle(false);
     }
 
-    void Toggle(bool enable)
+    public void Toggle(bool enable)
     {
         button1.gameObject.SetActive(enable);
         button2.gameObject.SetActive(!enable);

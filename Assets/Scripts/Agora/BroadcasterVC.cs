@@ -1,12 +1,14 @@
 ﻿using System.Collections;
 using agora_gaming_rtc;
-using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
-using UnityEngine.XR.ARSubsystems;
 using UnityEngine.XR.ARFoundation;
-
 using static agora_gaming_rtc.ExternalVideoFrame;
+
+
+public interface ICallback
+{
+    void OnGOStateChanged(bool enable);
+}
 
 /// <summary>
 ///    Broadcast View Controller controls the client that uses the AR Camera to
@@ -15,18 +17,24 @@ using static agora_gaming_rtc.ExternalVideoFrame;
 /// and such AR object is also included in the video sharing frames to show
 /// to the Audience.
 /// </summary>
-public class BroadcasterVC : PlayerViewControllerBase
-{
+public class BroadcasterVC : PlayerViewControllerBase, ICallback
+{    
+    Texture2D BufferTexture;
+
     public static TextureFormat ConvertFormat = TextureFormat.BGRA32;
     public static VIDEO_PIXEL_FORMAT PixelFormat = VIDEO_PIXEL_FORMAT.VIDEO_PIXEL_BGRA;
 
     public static int ShareCameraMode = 1;  // 0 = unsafe buffer pointer, 1 = renderer iamge
-    ARCameraManager cameraManager;
-
-    MonoBehaviour monoProxy;
     int i = 0; // monotonic timestamp counter
 
-    Texture2D BufferTexture;
+    ARCameraManager cameraManager;
+    MonoBehaviour monoProxy;
+
+    RemoteDrawer remoteDrawer;
+
+    string channelName = "";
+
+    bool usesExternalVideoSource = false;
 
     public BroadcasterVC(string appID) : base(appID) { }
 
@@ -37,6 +45,8 @@ public class BroadcasterVC : PlayerViewControllerBase
         if (mRtcEngine == null)
             return;
 
+        channelName = channel;
+
         // set callbacks (optional)
         mRtcEngine.OnJoinChannelSuccess = OnJoinChannelSuccess;
         mRtcEngine.OnUserJoined = OnUserJoined;
@@ -45,7 +55,7 @@ public class BroadcasterVC : PlayerViewControllerBase
         CameraCapturerConfiguration config = new CameraCapturerConfiguration();
         config.preference = CAPTURER_OUTPUT_PREFERENCE.CAPTURER_OUTPUT_PREFERENCE_PERFORMANCE;
         //config.preference = CAPTURER_OUTPUT_PREFERENCE.CAPTURER_OUTPUT_PREFERENCE_AUTO;
-        config.cameraDirection = CAMERA_DIRECTION.CAMERA_REAR;
+        config.cameraDirection = CAMERA_DIRECTION.CAMERA_FRONT;
         mRtcEngine.SetCameraCapturerConfiguration(config);
 
         VideoEncoderConfiguration abc = new VideoEncoderConfiguration();
@@ -78,19 +88,19 @@ public class BroadcasterVC : PlayerViewControllerBase
         //mRtcEngine.EnableLocalVideo(false);
 
         //  mRtcEngine.SetVideoQualityParameters(true);
-        mRtcEngine.SetExternalVideoSource(true, false);
+        //mRtcEngine.SetExternalVideoSource(false, false);
         mRtcEngine.EnableLocalAudio(false);
         mRtcEngine.MuteLocalAudioStream(true);
 
         mRtcEngine.SetChannelProfile(GameController.ChannelProfile);
         mRtcEngine.SetClientRole(CLIENT_ROLE_TYPE.CLIENT_ROLE_BROADCASTER);
         // join channel
-        mRtcEngine.JoinChannel(channel, null, 0);
+        mRtcEngine.JoinChannel(channelName, null, 0);
 
         // Optional: if a data stream is required, here is a good place to create it
         int streamID = mRtcEngine.CreateDataStream(true, true);
 
-        InitializeRtmClient();
+        InitializeRtmClient();        
 
         Debug.Log("initializeEngine done, data stream id = " + streamID);
     }
@@ -102,9 +112,13 @@ public class BroadcasterVC : PlayerViewControllerBase
         GameObject rtmManager = GameObject.Find("DrawListener");
         if (rtmManager != null)
         {
-            RemoteDrawer remoteDrawer = rtmManager.GetComponent<RemoteDrawer>();
+            remoteDrawer = rtmManager.GetComponent<RemoteDrawer>();
 
-            clientEventHandler.OnMessageReceivedFromPeer = remoteDrawer.OnWebStreamMessageHandler;
+            mRtcEngine.OnStreamMessage += remoteDrawer.OnStreamMessageHandler;
+
+            //clientEventHandler.OnMessageReceivedFromPeer = remoteDrawer.OnWebStreamMessageHandler;
+
+            clientEventHandler.OnMessageReceivedFromPeer = OnMessageReceivedFromPeerHandler;
         }
 
         GameObject go = GameObject.Find("ButtonColor");
@@ -112,35 +126,27 @@ public class BroadcasterVC : PlayerViewControllerBase
         {
             // the button is only available for AudienceVC
             go.SetActive(false);
-        }
+        }        
 
-        go = GameObject.Find("AR Camera");        
-        if (go != null)
+        go = GameObject.Find("ShareScreen");
         {
-            monoProxy = go.GetComponent<MonoBehaviour>();
-            cameraManager = go.GetComponent<ARCameraManager>();
-
-            if (cameraManager == null)
-                Debug.Log("ARCameraManager object not found");
-        }
-        else
-        {
-            Debug.Log("ARCamera object not found");
+            ShareScreen shrScreen = go.GetComponent<ShareScreen>();
+            shrScreen.callback = this;
         }
 
+        ///Login the rtmClient
+        LoginRtmClient();
+    }
 
-        go = GameObject.Find("sphere");
-        if (go != null)
-        {
-            var sphere = go;
-            // hide this before AR Camera start capturing
-            sphere.SetActive(false);
-            monoProxy.StartCoroutine(DelayAction(.5f,
-                () =>
-                {
-                    sphere.SetActive(true);
-                }));
-        }
+    protected override void OnMessageReceivedFromPeerHandler(int id, string peerId, agora_rtm.TextMessage message)
+    {
+        base.OnMessageReceivedFromPeerHandler(id, peerId, message);
+        remoteDrawer.OnWebStreamMessageHandler(id, peerId, message);
+    }
+
+    void OnWebStreamMessageHandler(int id, string peerId, agora_rtm.TextMessage message)//(int userId, string msg)
+    {
+        Debug.Log("Message received from remote user id: " + id + " peerId: " + peerId + " message: " + message);
     }
 
     // When a remote user joined, this delegate will be called. Typically
@@ -153,13 +159,102 @@ public class BroadcasterVC : PlayerViewControllerBase
     protected override void OnJoinChannelSuccess(string channelName, uint uid, int elapsed)
     {
         base.OnJoinChannelSuccess(channelName, uid, elapsed);
-        EnableSharing();
+        //TODO: instead of calling below method, enable/disable UI sharing button when user joins or leaves
+        if (usesExternalVideoSource && Users.Count != 0)
+            EnableSharing();           
+    }    
+
+    public override void Leave()
+    {
+        //TODO: instead of calling below method, enable/disable UI sharing button when user joins or leaves
+        DisableSharing();
+
+        base.Leave();
+    }    
+
+    // When remote user is offline, this delegate will be called. Typically
+    // delete the GameObject for this user
+    protected override void OnUserOffline(uint uid, USER_OFFLINE_REASON reason)
+    {
+        // remove video stream
+        Debug.Log("onUserOffline: uid = " + uid + " reason = " + reason);
+
+        base.OnUserOffline(uid, reason);
+        // this is called in main thread
+        GameObject go = GameObject.Find(uid.ToString());
+        if (!ReferenceEquals(go, null))
+        {
+            UnityEngine.Object.Destroy(go);
+        }
+        //TODO: instead of calling below method, enable/disable UI sharing button when user joins or leaves
+       DisableSharing();
+    }
+    /******************************/
+
+    public void OnGOStateChanged(bool enable)
+    {
+        usesExternalVideoSource = enable;        
+
+        // if sharing is enabled
+        if (enable)
+        {
+            #region Find AR Camera, ARCameraManager and Sphere
+            GameObject go = GameObject.Find("AR Camera");
+            if (go != null)
+            {
+                //TODO: Take lock for setting monoPRoxy and cameraManager
+                monoProxy = go.GetComponent<MonoBehaviour>();
+                cameraManager = go.GetComponent<ARCameraManager>();
+
+                if (cameraManager == null)
+                {
+                    Debug.Log("ARCameraManager object not found");
+                    return;
+                }
+            }            
+            go = GameObject.Find("sphere");
+            if (go != null)
+            {
+                var sphere = go;
+                // hide this before AR Camera start capturing
+                sphere.SetActive(false);
+                monoProxy.StartCoroutine(DelayAction(.5f,
+                    () =>
+                    {
+                        sphere.SetActive(true);
+                    }));
+            }
+            #endregion            
+        }        
+
+        ReJoinChannel(enable);
+
+        remoteDrawer.SetDrawManager(enable);
     }
 
-    void EnableSharing()
+    void ReJoinChannel(bool enable)
+    {
+        //Temporarily leave the channel
+        mRtcEngine.LeaveChannel();
+
+        //LogoutRtmClient();
+
+        //Set external video source
+        mRtcEngine.SetExternalVideoSource(enable, false);
+
+        //Now join the channel again
+        mRtcEngine.JoinChannel(channelName, null, 0);
+
+        //LoginRtmClient();
+    }   
+
+        /***************Sharing Screen Methods*********************/
+        public void EnableSharing()
     {
         cameraManager.frameReceived += OnCameraFrameReceived;
-        RenderTexture renderTexture = Camera.main.targetTexture;
+        GameObject camera = GameObject.FindGameObjectWithTag("MainCamera");//.GetComponent<Camera>();
+        RenderTexture renderTexture = camera.GetComponent<Camera>().targetTexture;        
+
         if (renderTexture != null)
         {
             BufferTexture = new Texture2D(renderTexture.width, renderTexture.height, ConvertFormat, false);
@@ -171,25 +266,6 @@ public class BroadcasterVC : PlayerViewControllerBase
                 monoProxy.StartCoroutine(CoShareRenderData());
             }
         }
-    }
-
-    void DisableSharing()
-    {
-        cameraManager.frameReceived -= OnCameraFrameReceived;
-
-        BufferTexture = null;
-    }
-
-    public override void Leave()
-    {
-        DisableSharing();
-        base.Leave();
-    }
-
-    IEnumerator DelayAction(float delay, System.Action doAction)
-    {
-        yield return new WaitForSeconds(delay);
-        doAction();
     }
 
     /// <summary>
@@ -208,21 +284,6 @@ public class BroadcasterVC : PlayerViewControllerBase
         {
             ShareRenderTexture();
         }
-    }
-
-    // When remote user is offline, this delegate will be called. Typically
-    // delete the GameObject for this user
-    protected override void OnUserOffline(uint uid, USER_OFFLINE_REASON reason)
-    {
-        // remove video stream
-        Debug.Log("onUserOffline: uid = " + uid + " reason = " + reason);
-        // this is called in main thread
-        GameObject go = GameObject.Find(uid.ToString());
-        if (!ReferenceEquals(go, null))
-        {
-            UnityEngine.Object.Destroy(go);
-        }
-        // DisableSharing();
     }
 
     // Uncomment the follow function to try out XRCameraImage method to 
@@ -365,4 +426,21 @@ public class BroadcasterVC : PlayerViewControllerBase
         yield return null;
         onFinish();
     }
+
+    void DisableSharing()
+    {
+        //cameraManager.frameReceived -= OnCameraFrameReceived;
+
+        //TODO: Take lock for setting monoPRoxy and cameraManager
+        monoProxy = null;
+        cameraManager = null;
+
+        BufferTexture = null;
+    }
+
+    IEnumerator DelayAction(float delay, System.Action doAction)
+    {
+        yield return new WaitForSeconds(delay);
+        doAction();
+    }   
 }

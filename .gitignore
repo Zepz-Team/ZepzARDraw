@@ -41,3 +41,5 @@ Build/ARDraw4.apk
 Build/ARDraw3.apk
 Build/ARDraw2.apk
 Build/ARDraw.apk
+*.log
+*.dmp
