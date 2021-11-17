@@ -41,7 +41,7 @@ public class ARExperienceManager : MonoBehaviour
         Debug.Log("Activate Experience");
         OnInitialized?.Invoke();
         Initialized = true;
-        arPlaneManager.enabled = false;
+        arPlaneManager.planesChanged -= PlanesChanged;
     }
 
     public void Restart()

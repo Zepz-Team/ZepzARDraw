@@ -57,8 +57,7 @@ public class PlayerViewControllerBase : IVideoChatClient
 
     public PlayerViewControllerBase(string appID)
     {
-        this.AppID = appID;
-        Users = new Dictionary<uint, GameObject>();
+        this.AppID = appID;        
     }
 
     /// <summary>
@@ -102,7 +101,7 @@ public class PlayerViewControllerBase : IVideoChatClient
         clientEventHandler.OnQueryPeersOnlineStatusResult = OnQueryPeersOnlineStatusResultHandler;
         clientEventHandler.OnLoginSuccess = OnClientLoginSuccessHandler;
         clientEventHandler.OnLoginFailure = OnClientLoginFailureHandler;
-        clientEventHandler.OnMessageReceivedFromPeer = OnMessageReceivedFromPeerHandler;
+        //clientEventHandler.OnMessageReceivedFromPeer = OnMessageReceivedFromPeerHandler;
     }
 
     void OnQueryPeersOnlineStatusResultHandler(int id, long requestId, PeerOnlineStatus[] peersStatus, int peerCount, QUERY_PEERS_ONLINE_STATUS_ERR errorCode)
@@ -201,6 +200,8 @@ public class PlayerViewControllerBase : IVideoChatClient
 
     public virtual void OnSceneLoaded()
     {
+        Users = new Dictionary<uint, GameObject>();
+
         canvas = GameObject.Find("ChatCanvasUI")?.transform;
         if (ReferenceEquals(canvas, null))
         {
@@ -243,7 +244,7 @@ public class PlayerViewControllerBase : IVideoChatClient
     protected virtual void OnJoinChannelSuccess(string channelName, uint uid, int elapsed)
     {
         Debug.Log("JoinChannelSuccessHandler: uid = " + uid);
-        mRtcEngine.OnFirstRemoteVideoDecoded = LogFirstRemoteVideoDecoded;        
+        mRtcEngine.OnFirstRemoteVideoDecoded += LogFirstRemoteVideoDecoded;        
     }
 
     void LogFirstRemoteVideoDecoded(uint uid, int width, int height, int elapsed)
@@ -279,7 +280,7 @@ public class PlayerViewControllerBase : IVideoChatClient
         
         if (!Users.ContainsKey(uid))
         {
-            GameObject GO =  userHandler.CreateAndConfigureUserVideo(uid);
+            GameObject GO =  userHandler.CreateAndConfigureUserVideo(uid);             
             Users.Add(uid, GO);           
         }
     }
@@ -315,6 +316,7 @@ public class PlayerViewControllerBase : IVideoChatClient
     {
         Leave(); // leave channel
         UnloadEngine(); // delete engine
+        Users = null; // Delete all users
 
         //Logging out from rtmClient
         LogoutRtmClient();
@@ -361,5 +363,5 @@ public class PlayerViewControllerBase : IVideoChatClient
             rtmClient.Dispose();
             rtmClient = null;
         }
-    }
+    }    
 }

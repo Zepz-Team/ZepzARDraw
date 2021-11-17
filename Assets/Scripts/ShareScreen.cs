@@ -13,10 +13,11 @@ public class ShareScreen : MonoBehaviour
     [SerializeField] GameObject localUser;
     [SerializeField] RectTransform grid;
     [SerializeField] RectTransform Canvas;
-    [SerializeField] GameObject Instruments;
+    //[SerializeField] GameObject Instruments;
+    [SerializeField] GameObject ARElementsHolder;   //Holds flip Camera button, Instruments and Reticle
     [SerializeField] ToggleButton toggleMainWin;
-    [SerializeField] Button CameraButton;
-    [SerializeField] Button HangupButton;
+    //[SerializeField] Button CameraButton;
+    //[SerializeField] Button HangupButton;
     [SerializeField] GameObject Background;
     [SerializeField] GameObject AR;
     [SerializeField] ToggleButton toggleVideo;
@@ -32,7 +33,7 @@ public class ShareScreen : MonoBehaviour
         mRtcEngine = IRtcEngine.QueryEngine();
         SetupMainWinButton();
         SetupToggleVideo();
-        CameraButton.onClick.AddListener(StopScreenShare);        
+        //CameraButton.onClick.AddListener(StopScreenShare);        
     }
 
     //private void Start()
@@ -54,13 +55,21 @@ public class ShareScreen : MonoBehaviour
         // Hide background panel
         Background.SetActive(false);
 
-        //Change local user screen to full-size and turn off grid layout       
+        //Change local user screen to full-size and turn off grid layout        
         RectTransform rect = localUser.GetComponent<RectTransform>();
         SetAndStretchToParentSize(rect, Canvas);
+
+        //Stetch video surface to full screen no offset
+        rect = Video.GetComponent<RectTransform>();
+        rect.offsetMin = new Vector2(0f, 0f);
+        rect.offsetMax = new Vector2(0f, 0f);
+
+        //SetAndStretchToParentSize(, rect);
         grid.gameObject.SetActive(false);
 
         //Enable instruments game object
-        Instruments.SetActive(true);
+        //Instruments.SetActive(true);
+        ARElementsHolder.SetActive(true);
 
         //Change Camera config to Back Camera        
         //mRtcEngine.SwitchCamera();
@@ -69,7 +78,7 @@ public class ShareScreen : MonoBehaviour
         toggleMainWin.Toggle(true);
 
         //Show switch camera button
-        CameraButton.gameObject.SetActive(true);
+        //CameraButton.gameObject.SetActive(true);
 
         //Turn On AR Session     
         //if (!AR.activeInHierarchy)        
@@ -90,12 +99,18 @@ public class ShareScreen : MonoBehaviour
         Background.SetActive(true);
 
         //Change local user screen to grid cell-size and turn on grid layout
-        grid.gameObject.SetActive(true);
-        RectTransform rect = localUser.GetComponent<RectTransform>();
-        SetAndStretchToParentSize(rect, grid);        
+        grid.gameObject.SetActive(true);        
+        RectTransform rect = localUser.GetComponent<RectTransform>();        
+        SetAndStretchToParentSize(rect, grid);
+
+        //Stretch video surface to x-offset of 62.5f        
+        rect = Video.GetComponent<RectTransform>();
+        rect.offsetMin = new Vector2(62.5f, 0f);
+        rect.offsetMax = new Vector2(-62.5f, 0f);
 
         //Enable instruments game object
-        Instruments.SetActive(false);
+        //Instruments.SetActive(false);
+        ARElementsHolder.SetActive(false);
 
         //Change Camera config to Back Camera 
         //mRtcEngine.SwitchCamera();
@@ -104,7 +119,7 @@ public class ShareScreen : MonoBehaviour
         toggleMainWin.Toggle(false);
 
         //Hide switch camera button
-        CameraButton.gameObject.SetActive(false);
+        //CameraButton.gameObject.SetActive(false);
 
         //Turn Off AR Session
         //if (AR.activeInHierarchy)        
@@ -123,6 +138,17 @@ public class ShareScreen : MonoBehaviour
         _mRect.anchorMax = new Vector2(0, 1);
         _mRect.pivot = new Vector2(0.5f, 0.5f);
         _mRect.sizeDelta = _parent.rect.size;
+        _mRect.transform.SetParent(_parent);
+    }
+
+    private void SetAndStretchToParentSize2(RectTransform _mRect, RectTransform _parent)
+    {
+        float width = 375f;
+        _mRect.anchoredPosition = _parent.position;
+        _mRect.anchorMin = new Vector2(0.5f, 0);
+        _mRect.anchorMax = new Vector2(0.5f, 1);
+        _mRect.pivot = new Vector2(0.5f, 0.5f);
+        _mRect.sizeDelta = new Vector2(width, _parent.rect.size.y);        
         _mRect.transform.SetParent(_parent);
     }
 

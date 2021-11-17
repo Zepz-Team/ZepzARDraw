@@ -43,3 +43,5 @@ Build/ARDraw2.apk
 Build/ARDraw.apk
 *.log
 *.dmp
+Assets/Scripts/test.cs
+Assets/Scripts/test.cs.meta

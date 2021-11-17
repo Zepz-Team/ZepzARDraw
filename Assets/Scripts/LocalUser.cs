@@ -6,7 +6,20 @@ using UnityEngine;
 public class LocalUser : MonoBehaviour
 {
     [SerializeField]
-    GameObject Video;        
+    GameObject Video;
+
+    [SerializeField]
+    Animator loadingAnimator;    
+
+    private void Start()
+    {
+        StartCoroutine(DelayAction(1.2f,
+                    () =>
+                    {
+                        loadingAnimator.enabled = false;
+                        loadingAnimator.gameObject.SetActive(false);
+                    }));
+    }
 
     public void ConfigureLocalUser()
     {
@@ -34,5 +47,11 @@ public class LocalUser : MonoBehaviour
         {
             videoSurface.SetEnable(false);
         }
-    }    
+    }
+
+    IEnumerator DelayAction(float delay, System.Action doAction)
+    {
+        yield return new WaitForSeconds(delay);
+        doAction();
+    }
 }

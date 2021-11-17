@@ -169,7 +169,7 @@ public class GameController : MonoBehaviour
         PlayerPrefs.Save();
 
         SceneManager.sceneLoaded += OnLevelFinishedLoading; // configure GameObject after scene is loaded
-        SceneManager.LoadScene(PlayerMode == PlayerMode.Audience ? AudienceSceneName : BroadcastSceneName, LoadSceneMode.Single);
+        SceneManager.LoadScene(PlayerMode == PlayerMode.Audience ? AudienceSceneName : BroadcastSceneName, LoadSceneMode.Single);       
     }
 
     //public void ToggleChannelProfile()

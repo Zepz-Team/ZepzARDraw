@@ -9,9 +9,9 @@ public class LineSettings : ScriptableObject
 
     public Color endColor = Color.white;
 
-    //public float startWidth = 0.01f;
+    public float startWidth = 0.08f;
 
-    //public float endWidth = 0.01f;
+    public float endWidth = 0.08f;
 
     public float distanceFromCamera = 0.3f;
 

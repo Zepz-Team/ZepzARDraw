@@ -27,6 +27,7 @@ public class BroadcasterVC : PlayerViewControllerBase, ICallback
     public static int ShareCameraMode = 1;  // 0 = unsafe buffer pointer, 1 = renderer iamge
     int i = 0; // monotonic timestamp counter
 
+    Camera ARCamera;
     ARCameraManager cameraManager;
     MonoBehaviour monoProxy;
 
@@ -116,9 +117,7 @@ public class BroadcasterVC : PlayerViewControllerBase, ICallback
 
             mRtcEngine.OnStreamMessage += remoteDrawer.OnStreamMessageHandler;
 
-            //clientEventHandler.OnMessageReceivedFromPeer = remoteDrawer.OnWebStreamMessageHandler;
-
-            clientEventHandler.OnMessageReceivedFromPeer = OnMessageReceivedFromPeerHandler;
+            //clientEventHandler.OnMessageReceivedFromPeer = remoteDrawer.OnWebStreamMessageHandler;            
         }
 
         GameObject go = GameObject.Find("ButtonColor");
@@ -142,12 +141,7 @@ public class BroadcasterVC : PlayerViewControllerBase, ICallback
     {
         base.OnMessageReceivedFromPeerHandler(id, peerId, message);
         remoteDrawer.OnWebStreamMessageHandler(id, peerId, message);
-    }
-
-    void OnWebStreamMessageHandler(int id, string peerId, agora_rtm.TextMessage message)//(int userId, string msg)
-    {
-        Debug.Log("Message received from remote user id: " + id + " peerId: " + peerId + " message: " + message);
-    }
+    }   
 
     // When a remote user joined, this delegate will be called. Typically
     // create a GameObject to render video on it
@@ -160,7 +154,7 @@ public class BroadcasterVC : PlayerViewControllerBase, ICallback
     {
         base.OnJoinChannelSuccess(channelName, uid, elapsed);
         //TODO: instead of calling below method, enable/disable UI sharing button when user joins or leaves
-        if (usesExternalVideoSource && Users.Count != 0)
+        if (usesExternalVideoSource)
             EnableSharing();           
     }    
 
@@ -199,36 +193,53 @@ public class BroadcasterVC : PlayerViewControllerBase, ICallback
         if (enable)
         {
             #region Find AR Camera, ARCameraManager and Sphere
-            GameObject go = GameObject.Find("AR Camera");
-            if (go != null)
+            GameObject CameraGO = GameObject.Find("AR Camera");
+            if (CameraGO != null)
             {
                 //TODO: Take lock for setting monoPRoxy and cameraManager
-                monoProxy = go.GetComponent<MonoBehaviour>();
-                cameraManager = go.GetComponent<ARCameraManager>();
+                ARCamera = CameraGO.GetComponent<Camera>();
+                //if (!ReferenceEquals(ARCamera, null))
+                //{
+                //    // Dynamically set the width & height of target render texture with that of screen resolution
+                //    ARCamera.targetTexture.width = Screen.width;
+                //    ARCamera.targetTexture.height = Screen.height;
+                //}
+                monoProxy = CameraGO.GetComponent<MonoBehaviour>();
+                cameraManager = CameraGO.GetComponent<ARCameraManager>();
 
                 if (cameraManager == null)
                 {
                     Debug.Log("ARCameraManager object not found");
                     return;
                 }
-            }            
-            go = GameObject.Find("sphere");
-            if (go != null)
-            {
-                var sphere = go;
-                // hide this before AR Camera start capturing
-                sphere.SetActive(false);
-                monoProxy.StartCoroutine(DelayAction(.5f,
-                    () =>
-                    {
-                        sphere.SetActive(true);
-                    }));
-            }
-            #endregion            
-        }        
+            } 
+            //TODO: temporarily hiding the sphere
+            //go = GameObject.Find("sphere");
+            //if (go != null)
+            //{
+            //    var sphere = go;
+            //    // hide this before AR Camera start capturing
+            //    sphere.SetActive(false);
+            //    monoProxy.StartCoroutine(DelayAction(.5f,
+            //        () =>
+            //        {
+            //            sphere.SetActive(true);
+            //        }));
+            //}
+            #endregion
+
+            clientEventHandler.OnMessageReceivedFromPeer += OnMessageReceivedFromPeerHandler;
+        } 
+        else
+        {
+            GameObject.Destroy(ARCamera);
+            //Subscribe to the OnMessageReceivedFromPeer event handler only when sharing is ON
+            clientEventHandler.OnMessageReceivedFromPeer -= OnMessageReceivedFromPeerHandler;
+        }
 
         ReJoinChannel(enable);
 
+        //Call this to initialize instance of ARDrawManager in remoteDrawer
         remoteDrawer.SetDrawManager(enable);
     }
 
@@ -252,13 +263,16 @@ public class BroadcasterVC : PlayerViewControllerBase, ICallback
         public void EnableSharing()
     {
         cameraManager.frameReceived += OnCameraFrameReceived;
-        GameObject camera = GameObject.FindGameObjectWithTag("MainCamera");//.GetComponent<Camera>();
-        RenderTexture renderTexture = camera.GetComponent<Camera>().targetTexture;        
+        //GameObject camera = GameObject.FindGameObjectWithTag("MainCamera");//.GetComponent<Camera>();
+        //RenderTexture renderTexture = camera.GetComponent<Camera>().targetTexture;        
+
+        //GameObject camera = GameObject.Find("AR Camera");
+        RenderTexture renderTexture = ARCamera.targetTexture;
 
         if (renderTexture != null)
         {
             BufferTexture = new Texture2D(renderTexture.width, renderTexture.height, ConvertFormat, false);
-
+            Debug.Log("BufferTexture resolution " + renderTexture.width + " , " + renderTexture.height);
             // Editor only, where onFrameReceived won't invoke
             if (Application.platform == RuntimePlatform.OSXEditor || Application.platform == RuntimePlatform.WindowsEditor)
             {
@@ -345,9 +359,13 @@ public class BroadcasterVC : PlayerViewControllerBase, ICallback
         {
             return;
         }
-        Camera targetCamera = Camera.main; // AR Camera
-        RenderTexture.active = targetCamera.targetTexture; // the targetTexture holds render texture
-        Rect rect = new Rect(0, 0, targetCamera.targetTexture.width, targetCamera.targetTexture.height);
+        //Camera targetCamera =  Camera.main; // ARCamera
+        //RenderTexture.active = targetCamera.targetTexture; // the targetTexture holds render texture
+        //Rect rect = new Rect(0, 0, targetCamera.targetTexture.width, targetCamera.targetTexture.height);
+
+        RenderTexture.active = ARCamera.targetTexture;
+        Rect rect = new Rect(0, 0, ARCamera.targetTexture.width, ARCamera.targetTexture.height);
+
         BufferTexture.ReadPixels(rect, 0, 0);
         BufferTexture.Apply();
 
@@ -392,9 +410,9 @@ public class BroadcasterVC : PlayerViewControllerBase, ICallback
             yield break;
         }
 
-        IRtcEngine rtc = IRtcEngine.QueryEngine();
+       // IRtcEngine rtc = IRtcEngine.QueryEngine();
         //if the engine is present
-        if (rtc != null)
+        if (mRtcEngine != null)
         {
             //Create a new external video frame
             ExternalVideoFrame externalVideoFrame = new ExternalVideoFrame();
@@ -409,17 +427,17 @@ public class BroadcasterVC : PlayerViewControllerBase, ICallback
             //Set the height of the video frame
             externalVideoFrame.height = height;
             //Remove pixels from the sides of the frame
-            externalVideoFrame.cropLeft = 10;
-            externalVideoFrame.cropTop = 10;
-            externalVideoFrame.cropRight = 10;
-            externalVideoFrame.cropBottom = 10;
+            //externalVideoFrame.cropLeft = 10;
+            //externalVideoFrame.cropTop = 10;
+            //externalVideoFrame.cropRight = 10;
+            //externalVideoFrame.cropBottom = 10;
             //Rotate the video frame (0, 90, 180, or 270)
-            externalVideoFrame.rotation = 180;
+            externalVideoFrame.rotation = 180; //Check after removing this rotation value
             // increment i with the video timestamp
             externalVideoFrame.timestamp = i++;
             //Push the external video frame with the frame we just created
             // int a = 
-            rtc.PushVideoFrame(externalVideoFrame);
+            mRtcEngine.PushVideoFrame(externalVideoFrame);
             // Debug.Log(" pushVideoFrame(" + i + ") size:" + bytes.Length + " => " + a);
 
         }

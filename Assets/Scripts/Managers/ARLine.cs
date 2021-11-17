@@ -39,18 +39,26 @@ public class ARLine
         }   
     }
 
-    public void AddNewLineRenderer(Transform parent, ARAnchor anchor, Vector3 position)
+    public void AddNewLineRenderer(Transform parent1, ARAnchor anchor, Vector3 position)
+    {
+        Transform parent2 = anchor?.transform;
+        AddNewLineRenderer(parent1, parent2, position);
+    }
+
+    public void AddNewLineRenderer(Transform parent1, Transform parent2, Vector3 position)
     {
         positionCount = 2;
         GameObject go = new GameObject($"LineRenderer");
         
-        go.transform.parent = anchor?.transform ?? parent;
+        go.transform.parent = parent2 ?? parent1;
         go.transform.position = position;
         go.tag = settings.lineTagName;
         
         LineRenderer goLineRenderer = go.AddComponent<LineRenderer>();
-        goLineRenderer.startWidth = settings.distanceFromCamera / 100; // settings.startWidth;
-        goLineRenderer.endWidth = settings.distanceFromCamera / 100;   //settings.endWidth;
+
+        //We are going with the convention that line width is 100th of distance from Camera
+        goLineRenderer.startWidth = settings.startWidth; // settings.distanceFromCamera / 100;
+        goLineRenderer.endWidth = settings.endWidth; // settings.distanceFromCamera / 100;
 
         goLineRenderer.startColor = settings.startColor;
         goLineRenderer.endColor = settings.endColor;
