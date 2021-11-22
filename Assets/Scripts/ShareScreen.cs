@@ -16,20 +16,21 @@ public class ShareScreen : MonoBehaviour
     //[SerializeField] GameObject Instruments;
     [SerializeField] GameObject ARElementsHolder;   //Holds flip Camera button, Instruments and Reticle
     [SerializeField] ToggleButton toggleMainWin;
-    //[SerializeField] Button CameraButton;
-    //[SerializeField] Button HangupButton;
+    //[SerializeField] Button CameraButton;    //[SerializeField] Button HangupButton;
     [SerializeField] GameObject Background;
     [SerializeField] GameObject AR;
     [SerializeField] ToggleButton toggleVideo;
     [SerializeField] GameObject Video;
     [SerializeField] GameObject NormalCamera;
 
+    Button CameraButton;
+
     public ICallback callback;
 
     private void Awake()
     {
         //toggleButton = transform.gameObject.GetComponent<ToggleButton>();
-        toggleButton.button2.onClick.AddListener(OnShareScreenClick);
+        //toggleButton.button2.onClick.AddListener(SwitchCamera);
         mRtcEngine = IRtcEngine.QueryEngine();
         SetupMainWinButton();
         SetupToggleVideo();
@@ -40,6 +41,68 @@ public class ShareScreen : MonoBehaviour
     //{
     //    StopScreenShare();        
     //}
+    public void SwitchCamera(bool RearDirection)
+    {
+        #region Things to turn OFF when RearDirection is ON
+        // Hide background panel
+        Background.SetActive(!RearDirection);
+
+        NormalCamera.SetActive(!RearDirection);       
+        #endregion
+
+        #region turn ON AR game objects when RearDirection is ON
+        AR.SetActive(RearDirection);
+        ARElementsHolder.SetActive(RearDirection);
+
+        if (RearDirection)
+        {
+            GameObject GO = ARElementsHolder.transform.GetChild(2).gameObject;
+            CameraButton = GO.GetComponent<Button>();
+            CameraButton.onClick.AddListener(FlipCameraDirection);
+        }
+        #endregion
+
+        #region Things to turn ON when RearDirection is ON
+        // Chage sharing icon from black to blue to show "is selected"
+        //toggleButton.Toggle(RearDirection);        
+
+        //Turn off main wondow button icon
+        toggleMainWin.Toggle(RearDirection);
+
+        //Change local user screen to full-size and turn off grid layout        
+        RectTransform rect = localUser.GetComponent<RectTransform>();
+        if (RearDirection)
+        {
+            SetAndStretchToParentSize(rect, Canvas);
+
+            //Stetch video surface to full screen no offset
+            rect = Video.GetComponent<RectTransform>();
+            rect.offsetMin = new Vector2(0f, 0f);
+            rect.offsetMax = new Vector2(0f, 0f);
+
+            grid.gameObject.SetActive(!RearDirection);
+        }
+        else
+        {
+            grid.gameObject.SetActive(!RearDirection);
+            SetAndStretchToParentSize(rect, grid);
+
+            //Stretch video surface to x-offset of 62.5f        
+            rect = Video.GetComponent<RectTransform>();
+            rect.offsetMin = new Vector2(62.5f, 0f);
+            rect.offsetMax = new Vector2(-62.5f, 0f);
+        }
+        
+        #endregion
+
+        //Call callback method in broadcastVC
+        callback.OnGOStateChanged(RearDirection);
+    }
+
+    private void FlipCameraDirection()
+    {
+        SwitchCamera(false);
+    }
 
     public void OnShareScreenClick()
     {
@@ -101,12 +164,7 @@ public class ShareScreen : MonoBehaviour
         //Change local user screen to grid cell-size and turn on grid layout
         grid.gameObject.SetActive(true);        
         RectTransform rect = localUser.GetComponent<RectTransform>();        
-        SetAndStretchToParentSize(rect, grid);
-
-        //Stretch video surface to x-offset of 62.5f        
-        rect = Video.GetComponent<RectTransform>();
-        rect.offsetMin = new Vector2(62.5f, 0f);
-        rect.offsetMax = new Vector2(-62.5f, 0f);
+        
 
         //Enable instruments game object
         //Instruments.SetActive(false);
@@ -163,7 +221,8 @@ public class ShareScreen : MonoBehaviour
                 // if screen-sharing then turn it off            
                 if (toggleButton.button1.isActiveAndEnabled)
                 {
-                    StopScreenShare();
+                    toggleButton.Toggle(false);
+                    SwitchCamera(false);
                 }
             });
             // Do nothing which clicking button2 
@@ -202,8 +261,10 @@ public class ShareScreen : MonoBehaviour
             // if screen-sharing then turn it off            
             if (toggleButton.button1.isActiveAndEnabled)
             {
-                StopScreenShare();
+                toggleButton.Toggle(false);
+                SwitchCamera(false);
             }
+
             Video.SetActive(false);
         });
     }    

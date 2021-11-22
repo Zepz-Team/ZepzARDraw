@@ -12,10 +12,7 @@ using UnityEngine.XR.ARFoundation;
 public class ARDrawManager : Singleton<ARDrawManager>
 {
     [SerializeField]
-    private LineSettings lineSettings = null;
-
-    [SerializeField]
-    private UnityEvent OnDraw = null;
+    private LineSettings lineSettings = null;    
 
     //[SerializeField]
     private ARAnchorManager anchorManager;
@@ -23,17 +20,14 @@ public class ARDrawManager : Singleton<ARDrawManager>
     Camera arCamera;     // the AR Camera
     Camera renderCam; // the Renderer Camera, space of 3D objects
     Camera viewCam; // the viewer of the projected quad, acting camera sin
+    Camera arCamera2;
 
     int renderTextureWidth;
-    int renderTextureHeight;
-
-    [SerializeField]
-    private ToggleButton toggleDraw = null;
+    int renderTextureHeight;    
 
     private List<ARAnchor> anchors = new List<ARAnchor>();
 
     //private Dictionary<int, ARLine> Lines = new Dictionary<int, ARLine>();
-    private List<ARLine> Lines = new List<ARLine>();
 
     [SerializeField] Transform referenceObject = null;
 
@@ -46,9 +40,24 @@ public class ARDrawManager : Singleton<ARDrawManager>
 
     private bool onTouchHold = false;
 
-    //private GameObject anchorGO;
+    /**********Draw ***********/
+    public bool CanDraw { get; set; }
 
-    private bool CanDraw { get; set; }
+    private List<ARLine> Lines = new List<ARLine>();
+    private List<ARLine> RemoteUserLines = new List<ARLine>();
+
+    [SerializeField]
+    private UnityEvent OnDraw = null;
+    /*************************/
+
+    /**********Drop Arrow ***********/
+    public bool CanDropArrow { get; set; }
+
+    private List<GameObject> Arrows = new List<GameObject>();
+
+    [SerializeField]
+    GameObject arrowPrefab;
+    /*************************/
 
     [SerializeField]
     private GameObject TransPlane = null;
@@ -67,19 +76,69 @@ public class ARDrawManager : Singleton<ARDrawManager>
         Screen.sleepTimeout = SleepTimeout.NeverSleep;
 
         //AllowDraw(false);
-        CamStart();
-
-        SetupDrawBtn();                
+        CamStart();                     
     }
 
     void Update ()
     {
-        #if !UNITY_EDITOR    
-        DrawOnTouch5();
-        #else
-        DrawOnMouse();
-        #endif
-	}    
+        if (CanDraw)
+        {
+            DrawOnTouch5();
+        }
+        if (CanDropArrow)
+        {
+            DropArrow();
+        }
+    }
+
+    private void DropArrow()
+    {
+        if (Input.touchCount == 0)
+            return;
+
+        if (RayHitUI())
+        {
+            return;
+        }
+
+        Touch touch = Input.GetTouch(0);
+        Vector2 touchPosition = touch.position;
+
+        if (touch.phase == TouchPhase.Ended)
+        {
+            if (rayManager.Raycast(touchPosition, hits, UnityEngine.XR.ARSubsystems.TrackableType.PlaneWithinPolygon /*| UnityEngine.XR.ARSubsystems.TrackableType.PlaneWithinInfinity*/ | UnityEngine.XR.ARSubsystems.TrackableType.FeaturePoint))
+            {
+                //if (rayManager.Raycast(touchPosition, hits, UnityEngine.XR.ARSubsystems.TrackableType.PlaneWithinPolygon /*| UnityEngine.XR.ARSubsystems.TrackableType.PlaneWithinInfinity*/ | UnityEngine.XR.ARSubsystems.TrackableType.FeaturePoint))
+                //{
+                Pose hitPose = hits[0].pose;
+
+                // Create an anchor at the hit point
+                ARAnchor anchor = anchorManager.AddAnchor(new Pose(hitPose.position, Quaternion.identity));
+                if (anchor == null)
+                    Debug.LogError("Error creating reference point");
+                else
+                {
+                    anchors.Add(anchor);
+                    //ARDebugManager.Instance.LogInfo($"Anchor created & total of {anchors.Count} anchor(s)");
+                }
+
+                Transform tfm = anchor?.transform ?? transform;
+                GameObject GO = Instantiate(arrowPrefab, hitPose.position, hitPose.rotation, tfm);                
+                Arrows.Add(GO);
+            }
+        }
+    }
+
+    internal void ClearArrows()
+    {
+        foreach (GameObject arrow in Arrows)
+        {
+            //LineRenderer line = currentLine.GetComponent<LineRenderer>();
+            Destroy(arrow);
+        }
+        //Destroy(anchorGO);
+        RemoveAllAnchors();
+    }
 
     /// <summary>
     /// THis is called when local user on mobile is drawing
@@ -131,7 +190,7 @@ public class ARDrawManager : Singleton<ARDrawManager>
                     lineSettings.startColor = lineSettings.endColor = Color.blue;
                     ARLine line = new ARLine(lineSettings);
                     Lines.Add(line);
-                    line.AddNewLineRenderer(transform, anchor, hits[0].pose.position);
+                    line.AddNewLineRenderer(transform, anchor.transform, hits[0].pose.position);
                 }
                 else if (touch.phase == TouchPhase.Moved || touch.phase == TouchPhase.Stationary)
                 {
@@ -148,8 +207,6 @@ public class ARDrawManager : Singleton<ARDrawManager>
 
     void DrawOnTouch5()
     {
-        if (!CanDraw) return;
-
         if (Input.touchCount == 0)
             return;
 
@@ -163,9 +220,10 @@ public class ARDrawManager : Singleton<ARDrawManager>
 
         if (touch.phase == TouchPhase.Began)
         {
-            Ray ray = arCamera.ScreenPointToRay(touchPosition);
+            Ray ray = arCamera2.ScreenPointToRay(touchPosition);
             RaycastHit hitObject;
             if (Physics.Raycast(ray, out hitObject))
+           // if (Physics.Raycast(touchPosition, Vector3.forward, out hitObject))
             {
                 onTouchHold = true;
             }
@@ -179,11 +237,13 @@ public class ARDrawManager : Singleton<ARDrawManager>
         }
 
         if (onTouchHold)
-        {
+        {            
             if (Lines.Count == 0)
             {
                 if (rayManager.Raycast(touchPosition, hits, UnityEngine.XR.ARSubsystems.TrackableType.PlaneWithinPolygon /*| UnityEngine.XR.ARSubsystems.TrackableType.PlaneWithinInfinity*/ | UnityEngine.XR.ARSubsystems.TrackableType.FeaturePoint))
                 {
+                    //if (rayManager.Raycast(touchPosition, hits, UnityEngine.XR.ARSubsystems.TrackableType.PlaneWithinPolygon /*| UnityEngine.XR.ARSubsystems.TrackableType.PlaneWithinInfinity*/ | UnityEngine.XR.ARSubsystems.TrackableType.FeaturePoint))
+                    //{
                     Pose hitPose = hits[0].pose;
 
                     // Set transparent plane position to the hit point
@@ -202,28 +262,33 @@ public class ARDrawManager : Singleton<ARDrawManager>
                     // Anchor the transparent plane on the hit plane
                     TransPlane.transform.parent = anchor.transform;
 
+                    lineSettings.startColor = lineSettings.endColor = Color.blue;
                     // Start drawing line on the transparent plane
                     ARLine line = new ARLine(lineSettings);
                     Lines.Add(line);
                     line.AddNewLineRenderer(transform, TransPlane.transform, hitPose.position);
                 }
             }
+            //}
             else
             {
-                Ray ray = arCamera.ScreenPointToRay(touchPosition);
+                Ray ray = arCamera2.ScreenPointToRay(touchPosition);
                 RaycastHit hitObject;
                 // Try to draw on the TransparentPlane(detecting using the layerMask) only if it was hit
-                if (Physics.Raycast(ray, out hitObject, 1000, layerMask))
+                if (Physics.Raycast(ray, out hitObject, 1000, layerMask ))
+                //if (Physics.Raycast(touchPosition, Vector3.forward, out hitObject, 1000, layerMask))
                 {
                     Debug.Log($"Hit object name : {hitObject.collider.name}");
-                    Lines[Lines.Count - 1].AddPoint(hitObject.point);
+                    Lines[Lines.Count() - 1].AddPoint(hitObject.point);                    
                 }
-                else if (Physics.Raycast(ray, out hitObject))   // If TransparentPlane was not hit then draw where hit was observed
+                else if (Physics.Raycast(ray, out hitObject ))   // ignore the GO in "ignore raycast" layer
                 {
                     Debug.Log($"Hit object name : {hitObject.collider.name}");
-                    Lines[Lines.Count - 1].AddPoint(hitObject.point);
+                    Lines[Lines.Count() - 1].AddPoint(hitObject.point);
                 }
-            }
+
+                //Lines[Lines.Count() - 1].AddPoint(hits[0].pose.position);
+            }        
         }
     }
 
@@ -353,6 +418,88 @@ public class ARDrawManager : Singleton<ARDrawManager>
         Lines.Clear(); // Remove(0);
     }
 
+    public void DrawOnMouse5(List<myPoint> points)
+    {
+        //if (!CanDraw) return;
+
+        //if (Input.touchCount == 0)
+        //    return;
+
+        //if (RayHitUI())
+        //{
+        //    return;
+        //}
+
+        foreach (myPoint point in points)
+        {
+            // If it is not the last point of the drawing
+            if (!(point.x == point.y && point.x == -1.0f))
+            {
+                //Touch touch = Input.GetTouch(0);
+                Vector2 touchPosition = new Vector2(point.x, point.y);
+                touchPosition = DeNormalizedScreenPosition(touchPosition);
+
+                //if (touch.phase == TouchPhase.Began)
+                if (RemoteUserLines.Count == 0)
+                {
+                    if (rayManager.Raycast(touchPosition, hits, UnityEngine.XR.ARSubsystems.TrackableType.PlaneWithinPolygon /*| UnityEngine.XR.ARSubsystems.TrackableType.PlaneWithinInfinity*/ | UnityEngine.XR.ARSubsystems.TrackableType.FeaturePoint))
+                    {
+                        //if (rayManager.Raycast(touchPosition, hits, UnityEngine.XR.ARSubsystems.TrackableType.PlaneWithinPolygon /*| UnityEngine.XR.ARSubsystems.TrackableType.PlaneWithinInfinity*/ | UnityEngine.XR.ARSubsystems.TrackableType.FeaturePoint))
+                        //{
+                        Pose hitPose = hits[0].pose;
+
+                        // Set transparent plane position to the hit point
+                        TransPlane.transform.SetPositionAndRotation(hitPose.position, hitPose.rotation);
+
+                        // Create an anchor at the hit point
+                        ARAnchor anchor = anchorManager.AddAnchor(new Pose(hitPose.position, Quaternion.identity));
+                        if (anchor == null)
+                            Debug.LogError("Error creating reference point");
+                        else
+                        {
+                            anchors.Add(anchor);
+                            //ARDebugManager.Instance.LogInfo($"Anchor created & total of {anchors.Count} anchor(s)");
+                        }
+
+                        // Anchor the transparent plane on the hit plane
+                        TransPlane.transform.parent = anchor.transform;
+
+                        lineSettings.startColor = lineSettings.endColor = Color.red;
+                        // Start drawing line on the transparent plane
+                        ARLine line = new ARLine(lineSettings);
+                        RemoteUserLines.Add(line);
+                        line.AddNewLineRenderer(transform, TransPlane.transform, hitPose.position);
+                    }
+                }
+                else
+                {
+                    Ray ray = arCamera2.ScreenPointToRay(touchPosition);
+                    RaycastHit hitObject;
+                    // Try to draw on the TransparentPlane(detecting using the layerMask) only if it was hit
+                    if (Physics.Raycast(ray, out hitObject, 1000, layerMask))
+                    //if (Physics.Raycast(touchPosition, Vector3.forward, out hitObject, 1000, layerMask))
+                    {
+                        Debug.Log($"Hit object name : {hitObject.collider.name}");
+                        RemoteUserLines[RemoteUserLines.Count() - 1].AddPoint(hitObject.point);
+                    }
+                    else if (Physics.Raycast(ray, out hitObject))   // ignore the GO in "ignore raycast" layer
+                    {
+                        Debug.Log($"Hit object name : {hitObject.collider.name}");
+                        RemoteUserLines[RemoteUserLines.Count() - 1].AddPoint(hitObject.point);
+                    }
+
+                    //Lines[Lines.Count() - 1].AddPoint(hits[0].pose.position);
+                }
+            }
+            else    //if the end point was received            
+            {
+                //onTouchHold = false;
+                RemoteUserLines.Clear();
+                RemovePlaneAdded();
+            }
+        }
+    }
+
     public void DrawDot(List<myPoint> points)
     {
         //foreach (myPoint point in points)
@@ -413,6 +560,14 @@ public class ARDrawManager : Singleton<ARDrawManager>
         pos = new Vector3(pos.x, pos.y, GetDistanceFromCamera());
 
         return camera.ScreenToWorldPoint(pos);
+    }
+
+    Vector2 DeNormalizedScreenPosition(Vector2 point)
+    {
+        float x = (point.x / renderTextureWidth) * Screen.width;// 1080;
+        float y = (point.y / renderTextureHeight) * Screen.height; // 2340;
+
+        return new Vector2(x, y);
     }
 
     Vector3 DeNormalizedScreenPosition(Vector2 point, Camera camera)
@@ -482,33 +637,25 @@ public class ARDrawManager : Singleton<ARDrawManager>
 
         if (results.Count > 0)
         {
+            if (results.Any(r => r.gameObject.name == "Quad"))
+            {
+                Debug.Log("Quad was hit");
+            }
             return results.Any(r => r.gameObject.layer == 5 /*LAYER_UI*/);
         }
         return false;
     }
 
-    private void SetupDrawBtn()
-    {
-        toggleDraw.button1.onClick.AddListener(() =>
-        {
-            toggleDraw.Tap();
-            ClearLines();
-            CanDraw = false;            
-        });
-        toggleDraw.button2.onClick.AddListener(() =>
-        {
-            toggleDraw.Tap();
-            CanDraw = true;
-        });
-    }
+    
 
     // Use this for initialization
     void CamStart()
     {
         //TODO: refactor -> find child GO
         arCamera = GameObject.Find("AR Camera").GetComponent<Camera>();
-        renderCam = GameObject.Find("RenderCamera").GetComponent<Camera>();        
+       renderCam = GameObject.Find("RenderCamera").GetComponent<Camera>();        
         viewCam = GameObject.Find("ViewCamera").GetComponent<Camera>();
+        arCamera2 = GameObject.Find("AR Camera2").GetComponent<Camera>();
 
         Camera cam = arCamera.GetComponent<Camera>();        
         renderTextureWidth = cam.targetTexture.width;

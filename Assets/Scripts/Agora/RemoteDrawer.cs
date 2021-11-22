@@ -8,20 +8,38 @@ public class RemoteDrawer : MonoBehaviour
 { 
     private ARDrawManager drawManager = null;
 
+    public ARDrawManager DrawManager
+    {
+        get
+        {
+            if (drawManager == null)
+            {
+                GameObject GO = GameObject.Find("AR Session Origin");
+
+                if (!ReferenceEquals(GO, null))
+                {
+                    drawManager = GO.GetComponent<ARDrawManager>();
+                }
+            }
+            return drawManager;
+        }
+        set { drawManager = value; }
+    }    
+
     //private Color DrawColor = Color.black;     
 
-    public void SetDrawManager(bool allow)
-    {
-        if (allow)
-        {
-            GameObject GO = GameObject.Find("AR Session Origin");
+    //public void SetDrawManager(bool allow)
+    //{
+    //    if (allow)
+    //    {
+    //        GameObject GO = GameObject.Find("AR Session Origin");
 
-            if (!ReferenceEquals(GO, null))
-            {
-                drawManager = GO.GetComponent<ARDrawManager>();
-            }
-        }       
-    }
+    //        if (!ReferenceEquals(GO, null))
+    //        {
+    //            drawManager = GO.GetComponent<ARDrawManager>();
+    //        }
+    //    }       
+    //}
 
     /// <summary>
     ///    The delegate function to handle message sent from Android mobile Audience side
@@ -41,7 +59,7 @@ public class RemoteDrawer : MonoBehaviour
         {
             //ClearLines();
             //Destroy(anchorGO);
-            drawManager.ClearLines();
+            DrawManager?.ClearLines();
         }
 
         Debug.Log("Main Camera pos = " + Camera.main.transform.position);
@@ -68,7 +86,7 @@ public class RemoteDrawer : MonoBehaviour
         {
             //ClearLines();
             //Destroy(anchorGO);
-            drawManager.ClearLines();
+            DrawManager?.ClearLines();
         }
 
         Debug.Log("Main Camera pos = " + Camera.main.transform.position);
@@ -88,7 +106,7 @@ public class RemoteDrawer : MonoBehaviour
             {
                 // DrawDot(pos);
                 Debug.Log("Touch Position: " + pos.ToString());                
-                drawManager.DrawOnTouch(pos);
+                DrawManager?.DrawOnTouch(pos);
             }            
         }
         catch (System.Exception e)
@@ -104,7 +122,7 @@ public class RemoteDrawer : MonoBehaviour
         {
             DrawmarkModel2 dm = JsonUtility.FromJson<DrawmarkModel2>(data);           
 
-            drawManager.DrawOnMouse(dm.points);
+            DrawManager?.DrawOnMouse5(dm.points);
 
             //drawManager.DrawDot(dm.points);            
         }

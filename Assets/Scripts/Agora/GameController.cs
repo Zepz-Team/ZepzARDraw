@@ -30,7 +30,7 @@ public class GameController : MonoBehaviour
     public const string HomeSceneName = "MainScene";
 
     private string AudienceSceneName = "AudPlayScene";
-    private string BroadcastSceneName = "CastARScene";
+    private string BroadcastSceneName = "CastARScene2";
 
     //[SerializeField] Text ModeText = null;
     //[SerializeField] Button LogoButton = null;

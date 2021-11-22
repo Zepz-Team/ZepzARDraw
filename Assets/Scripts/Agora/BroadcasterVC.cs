@@ -240,7 +240,7 @@ public class BroadcasterVC : PlayerViewControllerBase, ICallback
         ReJoinChannel(enable);
 
         //Call this to initialize instance of ARDrawManager in remoteDrawer
-        remoteDrawer.SetDrawManager(enable);
+        //remoteDrawer.SetDrawManager(enable);
     }
 
     void ReJoinChannel(bool enable)
