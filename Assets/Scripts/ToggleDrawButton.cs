@@ -5,17 +5,6 @@ using UnityEngine.UI;
 
 public class ToggleDrawButton : ToggleButton
 {
-    public Button Button1
-    {
-     get { return button1; } 
-     set { button1 = value;}
-    }
-    public Button Button2
-    {
-        get { return button2; }
-        set { button2 = value; }
-    }
-
     [SerializeField]
     ARDrawManager drawManager = null;
     

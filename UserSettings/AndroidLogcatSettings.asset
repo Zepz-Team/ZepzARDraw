@@ -3,195 +3,87 @@
     "m_SelectedPackage": {
         "deviceId": "1a27cae7",
         "name": "com.Zepz.ZepzRemoteAssistantAR",
-        "processId": 10081,
+        "processId": 31013,
         "exited": false
     },
     "m_SelectedPriority": 0,
     "m_KnownPackagesForSerialization": [
         {
             "deviceId": "1a27cae7",
+            "name": "com.DefaultCompany.EdCircuit",
+            "processId": 20037,
+            "exited": true
+        },
+        {
+            "deviceId": "1a27cae7",
+            "name": "com.DefaultCompany.EdCircuit",
+            "processId": 5744,
+            "exited": true
+        },
+        {
+            "deviceId": "1a27cae7",
+            "name": "com.DefaultCompany.EdCircuit",
+            "processId": 8454,
+            "exited": true
+        },
+        {
+            "deviceId": "1a27cae7",
+            "name": "com.DefaultCompany.EdCircuit",
+            "processId": 9483,
+            "exited": true
+        },
+        {
+            "deviceId": "1a27cae7",
+            "name": "com.DefaultCompany.EdCircuit",
+            "processId": 10740,
+            "exited": true
+        },
+        {
+            "deviceId": "1a27cae7",
             "name": "com.miui.home",
-            "processId": 2469,
+            "processId": 2434,
             "exited": false
         },
         {
             "deviceId": "1a27cae7",
             "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 30422,
-            "exited": true
-        },
-        {
-            "deviceId": "1a27cae7",
-            "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 32060,
-            "exited": true
-        },
-        {
-            "deviceId": "1a27cae7",
-            "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 23279,
-            "exited": true
-        },
-        {
-            "deviceId": "1a27cae7",
-            "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 24597,
-            "exited": true
-        },
-        {
-            "deviceId": "1a27cae7",
-            "name": "com.whatsapp",
-            "processId": 13237,
+            "processId": 12451,
             "exited": false
         },
         {
             "deviceId": "1a27cae7",
             "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 27436,
-            "exited": true
-        },
-        {
-            "deviceId": "1a27cae7",
-            "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 28626,
+            "processId": 14335,
             "exited": false
         },
         {
             "deviceId": "1a27cae7",
             "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 32351,
+            "processId": 15600,
             "exited": false
         },
         {
             "deviceId": "1a27cae7",
             "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 1588,
+            "processId": 16661,
             "exited": false
         },
         {
             "deviceId": "1a27cae7",
             "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 4178,
+            "processId": 18826,
             "exited": false
         },
         {
             "deviceId": "1a27cae7",
             "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 5831,
+            "processId": 21884,
             "exited": false
         },
         {
             "deviceId": "1a27cae7",
             "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 7443,
-            "exited": false
-        },
-        {
-            "deviceId": "1a27cae7",
-            "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 12203,
-            "exited": false
-        },
-        {
-            "deviceId": "1a27cae7",
-            "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 16017,
-            "exited": false
-        },
-        {
-            "deviceId": "1a27cae7",
-            "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 19930,
-            "exited": false
-        },
-        {
-            "deviceId": "1a27cae7",
-            "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 21274,
-            "exited": false
-        },
-        {
-            "deviceId": "1a27cae7",
-            "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 24378,
-            "exited": false
-        },
-        {
-            "deviceId": "1a27cae7",
-            "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 25391,
-            "exited": false
-        },
-        {
-            "deviceId": "1a27cae7",
-            "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 26278,
-            "exited": false
-        },
-        {
-            "deviceId": "1a27cae7",
-            "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 28244,
-            "exited": false
-        },
-        {
-            "deviceId": "1a27cae7",
-            "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 29586,
-            "exited": false
-        },
-        {
-            "deviceId": "1a27cae7",
-            "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 30582,
-            "exited": false
-        },
-        {
-            "deviceId": "1a27cae7",
-            "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 32629,
-            "exited": false
-        },
-        {
-            "deviceId": "1a27cae7",
-            "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 2288,
-            "exited": false
-        },
-        {
-            "deviceId": "1a27cae7",
-            "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 3972,
-            "exited": false
-        },
-        {
-            "deviceId": "1a27cae7",
-            "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 4708,
-            "exited": false
-        },
-        {
-            "deviceId": "1a27cae7",
-            "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 6340,
-            "exited": false
-        },
-        {
-            "deviceId": "1a27cae7",
-            "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 6985,
-            "exited": false
-        },
-        {
-            "deviceId": "1a27cae7",
-            "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 7604,
-            "exited": false
-        },
-        {
-            "deviceId": "1a27cae7",
-            "name": "com.Zepz.ZepzRemoteAssistantAR",
-            "processId": 10081,
+            "processId": 31013,
             "exited": false
         }
     ],

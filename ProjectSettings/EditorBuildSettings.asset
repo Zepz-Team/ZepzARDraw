@@ -23,6 +23,9 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/CastARScene3.unity
     guid: 2d7c1d94870007d4a80d52842bc4f504
+  - enabled: 0
+    path: Assets/Scenes/CastARScene2 1.unity
+    guid: 1b0206a19678b2d49a56fe6a15f9c9e1
   m_configObjects:
     UnityEditor.XR.ARCore.ARCoreSettings: {fileID: 11400000, guid: 3b6e1e3b51b0f4f9782af98302d4a97f,
       type: 2}

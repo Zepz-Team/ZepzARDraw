@@ -50,13 +50,15 @@ public class ARDrawManager : Singleton<ARDrawManager>
     private UnityEvent OnDraw = null;
     /*************************/
 
-    /**********Drop Arrow ***********/
+    /**********Drop Arrow/Shape ***********/
     public bool CanDropArrow { get; set; }
 
-    private List<GameObject> Arrows = new List<GameObject>();
+    private List<GameObject> Shapes = new List<GameObject>();
 
     [SerializeField]
-    GameObject arrowPrefab;
+    GameObject[] DropShape;
+
+    int ShapeIndex = 0;
     /*************************/
 
     [SerializeField]
@@ -91,6 +93,11 @@ public class ARDrawManager : Singleton<ARDrawManager>
         }
     }
 
+    public void SetShapeIndex(EShapes index)
+    {
+        ShapeIndex = (int)index;
+    }
+
     private void DropArrow()
     {
         if (Input.touchCount == 0)
@@ -123,18 +130,18 @@ public class ARDrawManager : Singleton<ARDrawManager>
                 }
 
                 Transform tfm = anchor?.transform ?? transform;
-                GameObject GO = Instantiate(arrowPrefab, hitPose.position, hitPose.rotation, tfm);                
-                Arrows.Add(GO);
+                GameObject GO = Instantiate(DropShape[ShapeIndex], hitPose.position, hitPose.rotation , tfm);                
+                Shapes.Add(GO);
             }
         }
     }
 
-    internal void ClearArrows()
+    internal void ClearShapes()
     {
-        foreach (GameObject arrow in Arrows)
+        foreach (GameObject shape in Shapes)
         {
             //LineRenderer line = currentLine.GetComponent<LineRenderer>();
-            Destroy(arrow);
+            Destroy(shape);
         }
         //Destroy(anchorGO);
         RemoveAllAnchors();
